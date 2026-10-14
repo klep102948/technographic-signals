@@ -20,6 +20,12 @@
       "match_type": "contains",
       "strength": 0.85,
       "notes": "Zendesk host-mapping/domain verification TXT token"
+    },
+    {
+      "value": "include:mail.zendesk.com",
+      "match_type": "contains",
+      "strength": 0.85,
+      "notes": "SPF include mail.zendesk.com: support email sent through Zendesk. 46 of 795 sampled ICP domains, 2026-10."
     }
   ],
   "mx_patterns": [

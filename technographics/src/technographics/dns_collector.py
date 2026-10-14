@@ -19,23 +19,34 @@ from technographics.dns_matcher import DNSRecords
 
 DEFAULT_RESOLVERS = ["1.1.1.1", "8.8.8.8"]
 DEFAULT_TIMEOUT = 3.0
+# Apex records carry the strongest signals (MX, SPF/verification TXT), so they get a longer total budget across
+# resolvers and one retry on timeout. TXT goes straight over TCP: SPF + verification tokens routinely exceed the
+# 512-byte UDP answer, and the truncated-UDP -> TCP fallback did not fit a 3 s lifetime under load (only ~540 of 800
+# real B2B domains returned TXT at 32-way concurrency; with TCP + lifetime nearly all do).
+APEX_LIFETIME_FACTOR = 3.0
 
 
-def _build_resolver(resolvers: list[str], timeout: float) -> dns.asyncresolver.Resolver:
+def _build_resolver(resolvers: list[str], timeout: float, lifetime: float | None = None) -> dns.asyncresolver.Resolver:
     resolver = dns.asyncresolver.Resolver(configure=False)
     resolver.nameservers = resolvers
     resolver.timeout = timeout
-    resolver.lifetime = timeout
+    resolver.lifetime = lifetime if lifetime is not None else timeout
     return resolver
 
 
-async def _resolve(resolver, name: str, rdtype: str) -> list[str]:
-    try:
-        answer = await resolver.resolve(name, rdtype, raise_on_no_answer=False)
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.DNSException):
-        return []
-    except Exception:
-        return []
+async def _resolve(resolver, name: str, rdtype: str, retries: int = 0) -> list[str]:
+    for attempt in range(retries + 1):
+        try:
+            answer = await resolver.resolve(name, rdtype, raise_on_no_answer=False, tcp=(rdtype == "TXT"))
+            break
+        except dns.exception.Timeout:
+            if attempt < retries:
+                continue
+            return []
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.DNSException):
+            return []
+        except Exception:
+            return []
     if answer.rrset is None:
         return []
     out: list[str] = []
@@ -70,15 +81,16 @@ async def collect_dns_async(
 ) -> DNSRecords:
     domain = domain.strip().strip(".").lower()
     resolver = _build_resolver(resolvers or DEFAULT_RESOLVERS, timeout)
+    apex = _build_resolver(resolvers or DEFAULT_RESOLVERS, timeout, lifetime=timeout * APEX_LIFETIME_FACTOR)
     records = DNSRecords(domain=domain)
 
     try:
         a, mx, txt, ns, soa = await asyncio.gather(
-            _resolve(resolver, domain, "A"),
-            _resolve(resolver, domain, "MX"),
-            _resolve(resolver, domain, "TXT"),
-            _resolve(resolver, domain, "NS"),
-            _resolve(resolver, domain, "SOA"),
+            _resolve(apex, domain, "A"),
+            _resolve(apex, domain, "MX", retries=1),
+            _resolve(apex, domain, "TXT", retries=1),
+            _resolve(apex, domain, "NS"),
+            _resolve(apex, domain, "SOA"),
         )
         records.a, records.mx, records.txt, records.ns, records.soa = a, mx, txt, ns, soa
 

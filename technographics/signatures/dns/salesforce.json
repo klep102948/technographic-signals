@@ -27,7 +27,14 @@
       "notes": "Salesforce-hosted subdomain target"
     }
   ],
-  "txt_patterns": [],
+  "txt_patterns": [
+    {
+      "value": "include:_spf.salesforce.com",
+      "match_type": "contains",
+      "strength": 0.8,
+      "notes": "SPF include for email sent from Salesforce (Sales/Service Cloud, email relay). 115 of 795 sampled ICP domains, 2026-10."
+    }
+  ],
   "mx_patterns": [],
   "ns_patterns": [],
   "a_patterns": [],

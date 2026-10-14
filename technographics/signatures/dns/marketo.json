@@ -17,7 +17,14 @@
       "notes": "Marketo landing-page domains CNAME to <munchkin>.mktoweb.com"
     }
   ],
-  "txt_patterns": [],
+  "txt_patterns": [
+    {
+      "value": "mktomail.com",
+      "match_type": "contains",
+      "strength": 0.9,
+      "notes": "SPF include mktomail.com: domain sends email through Marketo. 35 of 795 sampled ICP domains, 2026-10."
+    }
+  ],
   "mx_patterns": [],
   "ns_patterns": [],
   "a_patterns": [],

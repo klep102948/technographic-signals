@@ -40,7 +40,14 @@
       "notes": "HubSpot email sending DKIM domain"
     }
   ],
-  "txt_patterns": [],
+  "txt_patterns": [
+    {
+      "value": "include:[^\\s]*\\.spf\\d*\\.hubspotemail\\.net",
+      "match_type": "regex",
+      "strength": 0.9,
+      "notes": "SPF include <hubid>.spfNN.hubspotemail.net: the domain sends marketing/sales email through HubSpot (connected email sending domain). Seen on ~25% of 795 sampled B2B ICP domains, 2026-10."
+    }
+  ],
   "mx_patterns": [],
   "ns_patterns": [],
   "a_patterns": [],
@@ -50,6 +57,12 @@
       "match_type": "suffix",
       "strength": 0.85,
       "notes": "Connected email sending domain (DKIM to hubspotemail.net) requires Marketing Hub paid tier"
+    },
+    {
+      "value": "\\.spf\\d*\\.hubspotemail\\.net",
+      "match_type": "regex",
+      "strength": 0.85,
+      "notes": "Sending marketing email from the company's own domain requires a paid Marketing Hub tier (Starter+)"
     }
   ],
   "enterprise_indicators": [],

@@ -17,7 +17,14 @@
       "notes": "Pardot tracker domain CNAMEs to *.pardot.com (e.g. go.<domain>)"
     }
   ],
-  "txt_patterns": [],
+  "txt_patterns": [
+    {
+      "value": "aspmx.pardot.com",
+      "match_type": "contains",
+      "strength": 0.9,
+      "notes": "SPF include aspmx.pardot.com: domain sends email through Pardot / Account Engagement. 31 of 795 sampled ICP domains, 2026-10."
+    }
+  ],
   "mx_patterns": [],
   "ns_patterns": [],
   "a_patterns": [],
